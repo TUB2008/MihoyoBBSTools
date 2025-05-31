@@ -1,0 +1,38 @@
+name: Weekly Sync Upstream
+on:
+  schedule:
+    # 每周日 00:00 UTC 同步 (北京时间周一 08:00)
+    - cron: '0 0 * * 0'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sync-master:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允许推送更改
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整历史
+
+    # 可选：显示 Git 版本（验证环境）
+    - name: Show Git version
+      run: git --version
+
+    - name: Add upstream remote
+      run: |
+        git remote add upstream https://github.com/Womsxd/MihoyoBBSTools.git || true
+        git fetch upstream
+
+    - name: Merge upstream changes
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@users.noreply.github.com"
+        git checkout master
+        # 尝试合并，如果有冲突则采用上游的更改
+        git merge --no-ff --no-edit --strategy-option theirs upstream/master
+
+    - name: Push changes
+      run: git push origin master
